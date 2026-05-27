@@ -7,19 +7,6 @@ pipeline {
         TAG = "${BUILD_NUMBER}"
     }
 
-    stages {
-
-        stage('Load Environment Variables') {
-            steps {
-                script {
-                    def props = readProperties file: '.env'
-
-                    env.DOCKER_USERNAME = props['DOCKER_USERNAME']
-                    env.DOCKER_PASSWORD = props['DOCKER_PASSWORD']
-                }
-            }
-        }
-
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
