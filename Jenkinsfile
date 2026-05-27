@@ -7,33 +7,45 @@ pipeline {
         TAG = "${BUILD_NUMBER}"
     }
 
+    stages {
+
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
+                url: 'https://github.com/sunny-thackar/k8s-kind-voting-app.git'
             }
         }
 
         stage('Docker Login') {
             steps {
-                sh """
-                echo $DOCKER_PASSWORD | docker login \
-                -u $DOCKER_USERNAME \
-                --password-stdin
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+
+                    sh """
+                    echo \$DOCKER_PASS | docker login \
+                    -u \$DOCKER_USER \
+                    --password-stdin
+                    """
+                }
             }
         }
 
-        stage('Build Images') {
+        stage('Build Vote Image') {
             steps {
-
                 dir('vote') {
                     sh """
                     docker build -t $VOTE_IMAGE:$TAG .
                     docker tag $VOTE_IMAGE:$TAG $VOTE_IMAGE:latest
                     """
                 }
+            }
+        }
 
+        stage('Build Result Image') {
+            steps {
                 dir('result') {
                     sh """
                     docker build -t $RESULT_IMAGE:$TAG .
@@ -67,3 +79,14 @@ pipeline {
             }
         }
     }
+
+    post {
+        success {
+            echo 'Deployment Successful!'
+        }
+
+        failure {
+            echo 'Pipeline Failed!'
+        }
+    }
+}
